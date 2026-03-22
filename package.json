@@ -1,0 +1,29 @@
+{
+  "name": "be",
+  "version": "1.0.0",
+  "description": "",
+  "main": "sever.js",
+  "scripts": {
+    "dev": "node sever.js",
+    "start": "nodemon sever.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "express-validator": "^7.3.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.3.1",
+    "mongoose-unique-validator": "^6.1.0",
+    "morgan": "^1.10.1",
+    "validator": "^13.15.26"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
