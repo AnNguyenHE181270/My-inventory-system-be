@@ -37,4 +37,6 @@ router.patch('/:id/approve', checkRole('admin'), importController.approveImport)
 router.patch('/:id/reject', checkRole('admin'), importController.rejectImport);
 router.patch('/:id/cancel', checkRole('admin', 'manager'), importController.cancelImport);
 
+router.delete('/:id', checkRole('admin'), importController.deleteImport);
+
 module.exports = router;
