@@ -8,6 +8,10 @@ const HttpError = require('./models/http-error.model');
 
 
 const userRoute = require('./routes/user.route');
+const unitRoute = require('./routes/unit.route');
+const productRoute = require('./routes/product.route');
+const importRoute = require('./routes/import.route');
+const inventoryRoute = require('./routes/inventory.route');
 
 const app = express();
 const PORT = process.env.PORT ;
@@ -28,6 +32,10 @@ app.use((req, res, next) => {
 });
 
 app.use('/api/user', userRoute);
+app.use('/api/unit', unitRoute);
+app.use('/api/product', productRoute);
+app.use('/api/import', importRoute);
+app.use('/api/inventory', inventoryRoute);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Server is running' });
