@@ -20,10 +20,6 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['pending', 'active', 'blocked'],
     default: 'pending'
-  },
-  isVerify: {
-    type: Boolean,
-    default: false
   }
 }, {
   timestamps: true

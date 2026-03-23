@@ -54,7 +54,7 @@ const getAllProducts = async (req, res, next) => {
       total: products.length
     });
   } catch (err) {
-    return next(new HttpError('Fetching products failed.', 500));
+    return next(new HttpError('Lấy danh sách sản phẩm thất bại.', 500));
   }
 };
 
@@ -73,7 +73,7 @@ const getProductById = async (req, res, next) => {
 
     res.json({ product });
   } catch (err) {
-    return next(new HttpError('Fetching product failed.', 500));
+    return next(new HttpError('Lấy thông tin sản phẩm thất bại.', 500));
   }
 };
 

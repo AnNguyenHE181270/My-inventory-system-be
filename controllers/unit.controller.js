@@ -45,7 +45,7 @@ const getAllUnits = async (req, res, next) => {
       total: units.length
     });
   } catch (err) {
-    return next(new HttpError('Fetching units failed.', 500));
+    return next(new HttpError('Lấy danh sách đơn vị thất bại.', 500));
   }
 };
 
@@ -62,7 +62,7 @@ const getUnitById = async (req, res, next) => {
 
     res.json({ unit });
   } catch (err) {
-    return next(new HttpError('Fetching unit failed.', 500));
+    return next(new HttpError('Lấy thông tin đơn vị thất bại.', 500));
   }
 };
 

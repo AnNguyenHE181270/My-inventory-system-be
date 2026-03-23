@@ -31,7 +31,7 @@ const signup = async (req, res, next) => {
 
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return next(new HttpError('Invalid inputs', 422));
+    return next(new HttpError('Dữ liệu đầu vào không hợp lệ.', 422));
   }
 
   let existingUser;
@@ -41,7 +41,7 @@ const signup = async (req, res, next) => {
 
     if (existingUser) {
       return next(
-        new HttpError("User exists already, please login instead.", 422)
+        new HttpError('Người dùng đã tồn tại, vui lòng đăng nhập.', 422)
       );
     }
 
@@ -53,8 +53,7 @@ const signup = async (req, res, next) => {
       password: hashedPassword,
       avatar: null,
       role,
-      status: 'pending',
-      isVerify: false
+      status: 'pending'
     });
 
     await createAndSendOtp(email, OTP_PURPOSES.verifyEmail);
@@ -62,11 +61,11 @@ const signup = async (req, res, next) => {
     res.status(201).json({
       userId: createdUser._id,
       email: createdUser.email,
-      message: 'Dang ky thanh cong. Vui long kiem tra Gmail de lay ma xac thuc.'
+      message: 'Đăng ký thành công. Vui lòng kiểm tra Gmail để lấy mã xác thực.'
     });
 
   } catch (error) {
-    return next(new HttpError('Signup failed, please try again.', 500));
+    return next(new HttpError('Đăng ký thất bại, vui lòng thử lại.', 500));
   }
 };
 
@@ -75,11 +74,11 @@ const login = async (req, res, next) => {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
-    return next(new HttpError('Invalid inputs passed, please check your data.', 422));
+    return next(new HttpError('Dữ liệu đầu vào không hợp lệ, vui lòng kiểm tra lại.', 422));
   }
 
   if (!JWT_SECRET) {
-    return next(new HttpError('Missing JWT secret in environment variables.', 500));
+    return next(new HttpError('Thiếu JWT secret trong biến môi trường.', 500));
   }
 
   let existingUser;
@@ -88,19 +87,19 @@ const login = async (req, res, next) => {
     existingUser = await User.findOne({ email: email });
   } catch (err) {
     return next(
-      new HttpError('Logging in failed, please try again later.', 500),
+      new HttpError('Đăng nhập thất bại, vui lòng thử lại sau.', 500),
     );
   }
 
   if (!existingUser) {
     return next(
-      new HttpError('Invalid credentials, could not log you in.', 401),
+      new HttpError('Thông tin đăng nhập không đúng.', 401),
     );
   }
 
-  if (!existingUser.isVerify || existingUser.status !== 'active') {
+  if (existingUser.status !== 'active') {
     return next(
-      new HttpError('Tai khoan chua duoc xac minh email.', 403)
+      new HttpError('Tài khoản chưa được xác minh email.', 403)
     );
   }
 
@@ -114,7 +113,7 @@ const login = async (req, res, next) => {
 
   if (!isValidPassword) {
     return next(
-      new HttpError('Invalid credentials, could not log you in.', 401),
+      new HttpError('Thông tin đăng nhập không đúng.', 401),
     );
   }
 
@@ -128,7 +127,7 @@ const login = async (req, res, next) => {
     );
   } catch (err) {
     const error = new HttpError(
-      'Logging in failed, please try again later',
+      'Đăng nhập thất bại, vui lòng thử lại sau.',
       500
     )
     return next(error);
@@ -152,7 +151,7 @@ const verifyEmail = async (req, res, next) => {
 
   const { email, otp } = req.body;
   if (!email || !otp) {
-    return next(new HttpError("Email and OTP are required.", 400));
+    return next(new HttpError('Email và OTP là bắt buộc.', 400));
   }
 
   try {
@@ -161,21 +160,17 @@ const verifyEmail = async (req, res, next) => {
       purpose: OTP_PURPOSES.verifyEmail
     });
     if (!otpRecord) {
-      return next(new HttpError("OTP expired or not found.", 400));
+      return next(new HttpError('OTP đã hết hạn hoặc không tồn tại.', 400));
     }
 
     const isMatch = await bcrypt.compare(otp, otpRecord.otp);
     if (!isMatch) {
-      return next(new HttpError("Invalid OTP.", 400));
+      return next(new HttpError('Mã OTP không đúng.', 400));
     }
 
     const existingUser = await User.findOne({ email });
     if (!existingUser) {
-      return next(new HttpError("User not found.", 404));
-    }
-
-    if (!existingUser.isVerify) {
-      existingUser.isVerify = true;
+      return next(new HttpError('Không tìm thấy người dùng.', 404));
     }
 
     existingUser.status = 'active';
@@ -194,7 +189,7 @@ const verifyEmail = async (req, res, next) => {
     );
 
     return res.status(200).json({
-      message: "Email verified successfully.",
+      message: 'Xác minh email thành công.',
       userId: existingUser._id,
       email: existingUser.email,
       role: existingUser.role,
@@ -202,7 +197,7 @@ const verifyEmail = async (req, res, next) => {
       token
     });
   } catch (err) {
-    return next(new HttpError("Verification failed.", 500));
+    return next(new HttpError('Xác minh email thất bại.', 500));
   }
 };
 
@@ -218,21 +213,21 @@ const forgotPassword = async (req, res, next) => {
     const existingUser = await User.findOne({ email });
 
     if (!existingUser) {
-      return next(new HttpError('Email khong ton tai trong he thong.', 404));
+      return next(new HttpError('Email không tồn tại trong hệ thống.', 404));
     }
 
-    if (!existingUser.isVerify) {
-      return next(new HttpError('Tai khoan chua duoc xac minh email.', 403));
+    if (existingUser.status !== 'active') {
+      return next(new HttpError('Tài khoản chưa được xác minh email.', 403));
     }
 
     await createAndSendOtp(email, OTP_PURPOSES.resetPassword);
 
     return res.status(200).json({
       email,
-      message: 'Da gui ma OTP ve email cua ban.'
+      message: 'Đã gửi mã OTP về email của bạn.'
     });
   } catch (err) {
-    return next(new HttpError('Khong the gui ma OTP luc nay.', 500));
+    return next(new HttpError('Không thể gửi mã OTP lúc này.', 500));
   }
 };
 
@@ -247,7 +242,7 @@ const resetPassword = async (req, res, next) => {
   try {
     const existingUser = await User.findOne({ email });
     if (!existingUser) {
-      return next(new HttpError('Email khong ton tai trong he thong.', 404));
+      return next(new HttpError('Email không tồn tại trong hệ thống.', 404));
     }
 
     const otpRecord = await Otp.findOne({
@@ -255,12 +250,12 @@ const resetPassword = async (req, res, next) => {
       purpose: OTP_PURPOSES.resetPassword
     });
     if (!otpRecord) {
-      return next(new HttpError('OTP da het han hoac khong ton tai.', 400));
+      return next(new HttpError('OTP đã hết hạn hoặc không tồn tại.', 400));
     }
 
     const isMatch = await bcrypt.compare(otp, otpRecord.otp);
     if (!isMatch) {
-      return next(new HttpError('Ma OTP khong dung.', 400));
+      return next(new HttpError('Mã OTP không đúng.', 400));
     }
 
     existingUser.password = await bcrypt.hash(newPassword, 12);
@@ -269,10 +264,10 @@ const resetPassword = async (req, res, next) => {
     await Otp.deleteMany({ email, purpose: OTP_PURPOSES.resetPassword });
 
     return res.status(200).json({
-      message: 'Doi mat khau thanh cong. Ban co the dang nhap lai.'
+      message: 'Đổi mật khẩu thành công. Bạn có thể đăng nhập lại.'
     });
   } catch (err) {
-    return next(new HttpError('Khong the dat lai mat khau.', 500));
+    return next(new HttpError('Không thể đặt lại mật khẩu.', 500));
   }
 };
 
@@ -295,7 +290,7 @@ const getAllUsers = async (req, res, next) => {
       total: users.length
     });
   } catch (err) {
-    return next(new HttpError('Fetching users failed.', 500));
+    return next(new HttpError('Lấy danh sách người dùng thất bại.', 500));
   }
 };
 
@@ -307,12 +302,12 @@ const getUserById = async (req, res, next) => {
     const user = await User.findById(id).select('-password');
 
     if (!user) {
-      return next(new HttpError('User not found.', 404));
+      return next(new HttpError('Không tìm thấy người dùng.', 404));
     }
 
     res.json({ user });
   } catch (err) {
-    return next(new HttpError('Fetching user failed.', 500));
+    return next(new HttpError('Lấy thông tin người dùng thất bại.', 500));
   }
 };
 
@@ -320,7 +315,7 @@ const getUserById = async (req, res, next) => {
 const updateUser = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return next(new HttpError('Invalid inputs', 422));
+    return next(new HttpError('Dữ liệu đầu vào không hợp lệ.', 422));
   }
 
   const { id } = req.params;
@@ -330,7 +325,7 @@ const updateUser = async (req, res, next) => {
     const user = await User.findById(id);
 
     if (!user) {
-      return next(new HttpError('User not found.', 404));
+      return next(new HttpError('Không tìm thấy người dùng.', 404));
     }
 
     // Kiểm tra email mới có bị trùng không
@@ -367,7 +362,7 @@ const deleteUser = async (req, res, next) => {
     const user = await User.findById(id);
 
     if (!user) {
-      return next(new HttpError('User not found.', 404));
+      return next(new HttpError('Không tìm thấy người dùng.', 404));
     }
 
     // Không cho phép xóa chính mình
@@ -389,7 +384,7 @@ const deleteUser = async (req, res, next) => {
 const changePassword = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return next(new HttpError('Invalid inputs', 422));
+    return next(new HttpError('Dữ liệu đầu vào không hợp lệ.', 422));
   }
 
   const { currentPassword, newPassword } = req.body;
@@ -398,7 +393,7 @@ const changePassword = async (req, res, next) => {
     const user = await User.findById(req.userData.userId);
 
     if (!user) {
-      return next(new HttpError('User not found.', 404));
+      return next(new HttpError('Không tìm thấy người dùng.', 404));
     }
 
     // Kiểm tra mật khẩu hiện tại
