@@ -59,3 +59,53 @@ router.post(
 );
 
 module.exports = router;
+
+
+const checkAuth = require('../middleware/check-auth');
+const checkRole = require('../middleware/check-role');
+
+// Protected routes - CRUD User (chỉ admin)
+router.get(
+  '/',
+  checkAuth,
+  checkRole('admin'),
+  usersController.getAllUsers
+);
+
+router.get(
+  '/:id',
+  checkAuth,
+  checkRole('admin'),
+  usersController.getUserById
+);
+
+router.patch(
+  '/:id',
+  checkAuth,
+  checkRole('admin'),
+  [
+    check('name').optional().trim().notEmpty().withMessage('Name cannot be empty.'),
+    check('email').optional().normalizeEmail().isEmail().withMessage('Email is invalid.'),
+    check('role').optional().isIn(['admin', 'manager', 'staff']).withMessage('Role is invalid.'),
+    check('status').optional().isIn(['pending', 'active', 'blocked']).withMessage('Status is invalid.')
+  ],
+  usersController.updateUser
+);
+
+router.delete(
+  '/:id',
+  checkAuth,
+  checkRole('admin'),
+  usersController.deleteUser
+);
+
+// Thay đổi mật khẩu (user tự thay đổi)
+router.post(
+  '/change-password',
+  checkAuth,
+  [
+    check('currentPassword').trim().notEmpty().withMessage('Current password is required.'),
+    check('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters.')
+  ],
+  usersController.changePassword
+);
