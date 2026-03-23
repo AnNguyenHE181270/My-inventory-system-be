@@ -366,6 +366,30 @@ const getImportsByProduct = async (req, res, next) => {
   }
 };
 
+const deleteImport = async (req, res, next) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return next(new HttpError('Mã phiếu nhập không hợp lệ.', 422));
+  }
+
+  try {
+    const importRecord = await Import.findById(id);
+    if (!importRecord) {
+      return next(new HttpError('Không tìm thấy phiếu nhập.', 404));
+    }
+
+    if (importRecord.status === 'approved') {
+       return next(new HttpError('Không thể xóa phiếu nhập đã duyệt vì hệ thống đã ghi nhận tồn kho. Cần phải huỷ hoặc làm thao tác xuất kho.', 409));
+    }
+
+    await importRecord.deleteOne();
+    res.json({ message: 'Đã dọn dẹp phiếu nhập thành công.' });
+  } catch (err) {
+    return next(new HttpError('Xóa phiếu nhập thất bại.', 500));
+  }
+};
+
 exports.createImport = createImport;
 exports.updateImport = updateImport;
 exports.approveImport = approveImport;
@@ -374,3 +398,4 @@ exports.cancelImport = cancelImport;
 exports.getAllImports = getAllImports;
 exports.getImportById = getImportById;
 exports.getImportsByProduct = getImportsByProduct;
+exports.deleteImport = deleteImport;
