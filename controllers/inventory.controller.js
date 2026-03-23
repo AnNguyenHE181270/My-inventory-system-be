@@ -18,7 +18,7 @@ const getAllInventories = async (req, res, next) => {
       total: inventories.length
     });
   } catch (err) {
-    return next(new HttpError('Fetching inventories failed.', 500));
+    return next(new HttpError('Lấy danh sách tồn kho thất bại.', 500));
   }
 };
 
@@ -41,7 +41,7 @@ const getInventoryByProduct = async (req, res, next) => {
 
     res.json({ inventory });
   } catch (err) {
-    return next(new HttpError('Fetching inventory failed.', 500));
+    return next(new HttpError('Lấy thông tin tồn kho thất bại.', 500));
   }
 };
 
@@ -76,7 +76,7 @@ const getExpiringBatches = async (req, res, next) => {
       daysThreshold: parseInt(days)
     });
   } catch (err) {
-    return next(new HttpError('Fetching expiring batches failed.', 500));
+    return next(new HttpError('Lấy danh sách lô sắp hết hạn thất bại.', 500));
   }
 };
 
@@ -108,7 +108,7 @@ const getExpiredBatches = async (req, res, next) => {
       total: expiredItems.length
     });
   } catch (err) {
-    return next(new HttpError('Fetching expired batches failed.', 500));
+    return next(new HttpError('Lấy danh sách lô đã hết hạn thất bại.', 500));
   }
 };
 
@@ -143,7 +143,7 @@ const getInventoryStats = async (req, res, next) => {
       }
     });
   } catch (err) {
-    return next(new HttpError('Fetching inventory stats failed.', 500));
+    return next(new HttpError('Lấy thống kê tồn kho thất bại.', 500));
   }
 };
 
