@@ -53,8 +53,7 @@ const signup = async (req, res, next) => {
       password: hashedPassword,
       avatar: null,
       role,
-      status: 'pending',
-      isVerify: false
+      status: 'pending'
     });
 
     await createAndSendOtp(email, OTP_PURPOSES.verifyEmail);
@@ -98,7 +97,7 @@ const login = async (req, res, next) => {
     );
   }
 
-  if (!existingUser.isVerify || existingUser.status !== 'active') {
+  if (existingUser.status !== 'active') {
     return next(
       new HttpError('Tai khoan chua duoc xac minh email.', 403)
     );
@@ -174,10 +173,6 @@ const verifyEmail = async (req, res, next) => {
       return next(new HttpError("User not found.", 404));
     }
 
-    if (!existingUser.isVerify) {
-      existingUser.isVerify = true;
-    }
-
     existingUser.status = 'active';
     await existingUser.save();
 
@@ -221,7 +216,7 @@ const forgotPassword = async (req, res, next) => {
       return next(new HttpError('Email khong ton tai trong he thong.', 404));
     }
 
-    if (!existingUser.isVerify) {
+    if (existingUser.status !== 'active') {
       return next(new HttpError('Tai khoan chua duoc xac minh email.', 403));
     }
 
