@@ -276,3 +276,146 @@ exports.signup = signup;
 exports.verifyEmail = verifyEmail;
 exports.forgotPassword = forgotPassword;
 exports.resetPassword = resetPassword;
+
+
+// Lấy tất cả users (chỉ admin)
+const getAllUsers = async (req, res, next) => {
+  try {
+    const users = await User.find()
+      .select('-password')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      users,
+      total: users.length
+    });
+  } catch (err) {
+    return next(new HttpError('Fetching users failed.', 500));
+  }
+};
+
+// Lấy user theo ID (chỉ admin)
+const getUserById = async (req, res, next) => {
+  const { id } = req.params;
+
+  try {
+    const user = await User.findById(id).select('-password');
+
+    if (!user) {
+      return next(new HttpError('User not found.', 404));
+    }
+
+    res.json({ user });
+  } catch (err) {
+    return next(new HttpError('Fetching user failed.', 500));
+  }
+};
+
+// Cập nhật user (chỉ admin)
+const updateUser = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return next(new HttpError('Invalid inputs', 422));
+  }
+
+  const { id } = req.params;
+  const { name, email, role, status } = req.body;
+
+  try {
+    const user = await User.findById(id);
+
+    if (!user) {
+      return next(new HttpError('User not found.', 404));
+    }
+
+    // Kiểm tra email mới có bị trùng không
+    if (email && email !== user.email) {
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return next(new HttpError('Email already in use.', 422));
+      }
+      user.email = email;
+    }
+
+    user.name = name || user.name;
+    user.role = role || user.role;
+    user.status = status || user.status;
+
+    await user.save();
+
+    const updatedUser = await User.findById(id).select('-password');
+
+    res.json({
+      message: 'User updated successfully.',
+      user: updatedUser
+    });
+  } catch (err) {
+    return next(new HttpError('Updating user failed.', 500));
+  }
+};
+
+// Xóa user (chỉ admin)
+const deleteUser = async (req, res, next) => {
+  const { id } = req.params;
+
+  try {
+    const user = await User.findById(id);
+
+    if (!user) {
+      return next(new HttpError('User not found.', 404));
+    }
+
+    // Không cho phép xóa chính mình
+    if (user._id.toString() === req.userData.userId) {
+      return next(new HttpError('Cannot delete your own account.', 403));
+    }
+
+    await User.findByIdAndDelete(id);
+
+    res.json({
+      message: 'User deleted successfully.'
+    });
+  } catch (err) {
+    return next(new HttpError('Deleting user failed.', 500));
+  }
+};
+
+// Thay đổi mật khẩu (user tự thay đổi)
+const changePassword = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return next(new HttpError('Invalid inputs', 422));
+  }
+
+  const { currentPassword, newPassword } = req.body;
+
+  try {
+    const user = await User.findById(req.userData.userId);
+
+    if (!user) {
+      return next(new HttpError('User not found.', 404));
+    }
+
+    // Kiểm tra mật khẩu hiện tại
+    const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+    if (!isValidPassword) {
+      return next(new HttpError('Current password is incorrect.', 401));
+    }
+
+    // Cập nhật mật khẩu mới
+    user.password = await bcrypt.hash(newPassword, 12);
+    await user.save();
+
+    res.json({
+      message: 'Password changed successfully.'
+    });
+  } catch (err) {
+    return next(new HttpError('Changing password failed.', 500));
+  }
+};
+
+exports.getAllUsers = getAllUsers;
+exports.getUserById = getUserById;
+exports.updateUser = updateUser;
+exports.deleteUser = deleteUser;
+exports.changePassword = changePassword;
