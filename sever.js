@@ -12,6 +12,7 @@ const unitRoute = require('./routes/unit.route');
 const productRoute = require('./routes/product.route');
 const importRoute = require('./routes/import.route');
 const inventoryRoute = require('./routes/inventory.route');
+const exportRoute = require('./routes/export.route');
 
 const app = express();
 const PORT = process.env.PORT ;
@@ -36,6 +37,7 @@ app.use('/api/unit', unitRoute);
 app.use('/api/product', productRoute);
 app.use('/api/import', importRoute);
 app.use('/api/inventory', inventoryRoute);
+app.use('/api/export', exportRoute);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Server is running' });
