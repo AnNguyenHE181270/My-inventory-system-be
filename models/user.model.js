@@ -20,6 +20,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['pending', 'active', 'blocked'],
     default: 'pending'
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
+  deletedAt: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true

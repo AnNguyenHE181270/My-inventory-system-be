@@ -6,23 +6,13 @@ const checkRole = require('../middleware/check-role');
 
 const router = express.Router();
 
-// Protected routes - Admin và Manager có thể xem
-router.use(checkAuth); // Kiểm tra authentication
-router.use(checkRole('admin', 'manager')); // Chỉ admin và manager
+router.use(checkAuth);
 
-// Lấy tất cả inventory
-router.get('/', inventoryController.getAllInventories);
-
-// Lấy inventory theo sản phẩm
-router.get('/product/:productId', inventoryController.getInventoryByProduct);
-
-// Lấy các lô hàng sắp hết hạn (có thể truyền ?days=7)
-router.get('/expiring/batches', inventoryController.getExpiringBatches);
-
-// Lấy các lô hàng đã hết hạn
-router.get('/expired/batches', inventoryController.getExpiredBatches);
-
-// Lấy thống kê tồn kho
-router.get('/stats/summary', inventoryController.getInventoryStats);
+router.get('/products-in-stock', checkRole('staff', 'admin', 'manager'), inventoryController.getProductsInStock);
+router.get('/', checkRole('admin', 'manager'), inventoryController.getAllInventories);
+router.get('/product/:productId', checkRole('admin', 'manager'), inventoryController.getInventoryByProduct);
+router.get('/expiring/batches', checkRole('admin', 'manager'), inventoryController.getExpiringBatches);
+router.get('/expired/batches', checkRole('admin', 'manager'), inventoryController.getExpiredBatches);
+router.get('/stats/summary', checkRole('admin', 'manager'), inventoryController.getInventoryStats);
 
 module.exports = router;

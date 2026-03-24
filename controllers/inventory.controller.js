@@ -2,6 +2,40 @@ const HttpError = require('../models/http-error.model');
 const Inventory = require('../models/inventory.model');
 const Product = require('../models/product.model');
 
+const getProductsInStock = async (req, res, next) => {
+  try {
+    const inventories = await Inventory.find({ availableQuantity: { $gt: 0 } })
+      .populate({
+        path: 'product',
+        select: 'name sku barcode price image category brand isActive unit',
+        populate: { path: 'unit', select: 'name symbol' }
+      });
+
+    const products = inventories
+      .filter(inventory => inventory.product && inventory.product.isActive)
+      .map(inventory => ({
+        _id: inventory.product._id,
+        id: inventory.product._id,
+        name: inventory.product.name,
+        sku: inventory.product.sku,
+        barcode: inventory.product.barcode || '',
+        price: inventory.product.price,
+        image: inventory.product.image || '',
+        category: inventory.product.category || '',
+        brand: inventory.product.brand || '',
+        stock: inventory.availableQuantity,
+        unit: inventory.product.unit?.name || inventory.product.unit?.symbol || ''
+      }));
+
+    res.json({
+      products,
+      total: products.length
+    });
+  } catch (err) {
+    return next(new HttpError('Lấy danh sách sản phẩm có thể bán thất bại.', 500));
+  }
+};
+
 // Lấy tất cả inventory
 const getAllInventories = async (req, res, next) => {
   try {
@@ -148,6 +182,7 @@ const getInventoryStats = async (req, res, next) => {
 };
 
 exports.getAllInventories = getAllInventories;
+exports.getProductsInStock = getProductsInStock;
 exports.getInventoryByProduct = getInventoryByProduct;
 exports.getExpiringBatches = getExpiringBatches;
 exports.getExpiredBatches = getExpiredBatches;
