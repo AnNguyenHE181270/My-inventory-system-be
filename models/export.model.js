@@ -1,70 +1,119 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-// Schema cho từng sản phẩm trong đơn xuất
-const exportItemSchema = new mongoose.Schema({
-  product: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Product",
-    required: true,
+const exportItemSchema = new mongoose.Schema(
+  {
+    product: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Product',
+      required: true
+    },
+    productNameSnapshot: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    skuSnapshot: {
+      type: String,
+      default: '',
+      trim: true
+    },
+    barcodeSnapshot: {
+      type: String,
+      default: '',
+      trim: true
+    },
+    unitNameSnapshot: {
+      type: String,
+      default: '',
+      trim: true
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+    quantity: {
+      type: Number,
+      required: true,
+      min: 1
+    },
+    discount: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    lineTotal: {
+      type: Number,
+      required: true,
+      min: 0
+    }
   },
-  productName: {
-    type: String,
-    required: true,
-  },
-  quantity: {
-    type: Number,
-    required: true,
-    min: 1,
-  },
-  unit: {
-    type: String,
-    required: true,
-  },
-  price: {
-    type: Number,
-    required: true,
-  },
-  totalPrice: {
-    type: Number,
-    required: true,
-  },
-  // Lưu thông tin các lô hàng đã xuất (FIFO)
-  batchesUsed: [{
-    batchId: mongoose.Schema.Types.ObjectId,
-    quantity: Number,
-    importPrice: Number,
-  }],
-});
+  { _id: false }
+);
 
 const exportSchema = new mongoose.Schema(
   {
-    items: [exportItemSchema],
-
-    totalAmount: {
-      type: Number,
+    exportCode: {
+      type: String,
       required: true,
+      unique: true,
+      trim: true,
+      uppercase: true
     },
-
-    exportedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // staff
-      required: true,
+    customerName: {
+      type: String,
+      default: '',
+      trim: true
     },
-
     note: {
       type: String,
-      default: "",
+      default: '',
+      trim: true
     },
-
+    items: {
+      type: [exportItemSchema],
+      required: true,
+      default: []
+    },
+    subtotal: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    discountTotal: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    totalAmount: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    paidAmount: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    changeAmount: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
     status: {
       type: String,
-      enum: ["completed", "cancelled"],
-      default: "completed",
+      enum: ['draft', 'completed', 'cancelled'],
+      default: 'completed'
     },
+    exportedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    }
   },
   {
-    timestamps: true,
+    timestamps: true
   }
 );
 
-module.exports = mongoose.model("Export", exportSchema);
+module.exports = mongoose.model('Export', exportSchema);

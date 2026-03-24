@@ -1,32 +1,18 @@
 const express = require('express');
 const { check } = require('express-validator');
-
 const usersController = require('../controllers/user.controller');
+const checkAuth = require('../middleware/check-auth');
+const checkRole = require('../middleware/check-role');
 
 const router = express.Router();
 
-router.post(
-  '/signup',
-  [
-    check('name').trim().notEmpty().withMessage('Name is required.'),
-    check('email').normalizeEmail().isEmail().withMessage('Email is invalid.'),
-    check('password')
-      .isLength({ min: 6 })
-      .withMessage('Password must be at least 6 characters.'),
-    check('role')
-      .isIn(['admin', 'manager', 'staff'])
-      .withMessage('Role is invalid.')
-  ],
-  usersController.signup
-);
+router.post('/signup', usersController.signup);
 
 router.post(
   '/login',
   [
-    check('email').normalizeEmail().isEmail().withMessage('Email is invalid.'),
-    check('password')
-      .isLength({ min: 6 })
-      .withMessage('Password must be at least 6 characters.')
+    check('email').normalizeEmail().isEmail().withMessage('Email không hợp lệ.'),
+    check('password').isLength({ min: 6 }).withMessage('Mật khẩu phải có ít nhất 6 ký tự.')
   ],
   usersController.login
 );
@@ -34,78 +20,70 @@ router.post(
 router.post(
   '/verify-email',
   [
-    check('email').normalizeEmail().isEmail().withMessage('Email is invalid.'),
-    check('otp').trim().notEmpty().withMessage('OTP is required.')
+    check('email').normalizeEmail().isEmail().withMessage('Email không hợp lệ.'),
+    check('otp').trim().notEmpty().withMessage('OTP là bắt buộc.')
   ],
   usersController.verifyEmail
 );
 
 router.post(
   '/forgot-password',
-  [check('email').normalizeEmail().isEmail().withMessage('Email is invalid.')],
+  [check('email').normalizeEmail().isEmail().withMessage('Email không hợp lệ.')],
   usersController.forgotPassword
 );
 
 router.post(
   '/reset-password',
   [
-    check('email').normalizeEmail().isEmail().withMessage('Email is invalid.'),
-    check('otp').trim().notEmpty().withMessage('OTP is required.'),
-    check('newPassword')
-      .isLength({ min: 6 })
-      .withMessage('New password must be at least 6 characters.')
+    check('email').normalizeEmail().isEmail().withMessage('Email không hợp lệ.'),
+    check('otp').trim().notEmpty().withMessage('OTP là bắt buộc.'),
+    check('newPassword').isLength({ min: 6 }).withMessage('Mật khẩu mới phải có ít nhất 6 ký tự.')
   ],
   usersController.resetPassword
 );
 
-module.exports = router;
+router.get('/profile', checkAuth, usersController.getProfile);
 
+router.get('/', checkAuth, checkRole('admin'), usersController.getAllUsers);
 
-const checkAuth = require('../middleware/check-auth');
-const checkRole = require('../middleware/check-role');
-
-// Protected routes - CRUD User (chỉ admin)
-router.get(
-  '/',
+router.post(
+  '/internal-create',
   checkAuth,
   checkRole('admin'),
-  usersController.getAllUsers
+  [
+    check('name').trim().notEmpty().withMessage('Tên là bắt buộc.'),
+    check('email').normalizeEmail().isEmail().withMessage('Email không hợp lệ.'),
+    check('password').isLength({ min: 6 }).withMessage('Mật khẩu phải có ít nhất 6 ký tự.'),
+    check('role').isIn(['manager', 'staff']).withMessage('Chỉ được tạo tài khoản manager hoặc staff.')
+  ],
+  usersController.createInternalUser
 );
 
-router.get(
-  '/:id',
-  checkAuth,
-  checkRole('admin'),
-  usersController.getUserById
-);
+router.get('/:id', checkAuth, checkRole('admin'), usersController.getUserById);
 
 router.patch(
   '/:id',
   checkAuth,
   checkRole('admin'),
   [
-    check('name').optional().trim().notEmpty().withMessage('Name cannot be empty.'),
-    check('email').optional().normalizeEmail().isEmail().withMessage('Email is invalid.'),
-    check('role').optional().isIn(['admin', 'manager', 'staff']).withMessage('Role is invalid.'),
-    check('status').optional().isIn(['pending', 'active', 'blocked']).withMessage('Status is invalid.')
+    check('name').optional().trim().notEmpty().withMessage('Tên không được để trống.'),
+    check('email').optional().normalizeEmail().isEmail().withMessage('Email không hợp lệ.'),
+    check('role').optional().isIn(['admin', 'manager', 'staff']).withMessage('Vai trò không hợp lệ.'),
+    check('status').optional().isIn(['pending', 'active', 'blocked']).withMessage('Trạng thái không hợp lệ.')
   ],
   usersController.updateUser
 );
 
-router.delete(
-  '/:id',
-  checkAuth,
-  checkRole('admin'),
-  usersController.deleteUser
-);
+router.delete('/:id', checkAuth, checkRole('admin'), usersController.deleteUser);
 
-// Thay đổi mật khẩu (user tự thay đổi)
 router.post(
   '/change-password',
   checkAuth,
   [
-    check('currentPassword').trim().notEmpty().withMessage('Current password is required.'),
-    check('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters.')
+    check('currentPassword').trim().notEmpty().withMessage('Mật khẩu hiện tại là bắt buộc.'),
+    check('newPassword').isLength({ min: 6 }).withMessage('Mật khẩu mới phải có ít nhất 6 ký tự.')
   ],
   usersController.changePassword
 );
+
+module.exports = router;

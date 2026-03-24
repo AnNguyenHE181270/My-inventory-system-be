@@ -4,6 +4,7 @@ const unitSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true }, // ví dụ: kg, chai
     description: { type: String, default: "" },
+    isActive: { type: Boolean, default: true },
 
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
