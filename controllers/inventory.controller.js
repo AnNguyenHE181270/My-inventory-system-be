@@ -181,9 +181,43 @@ const getInventoryStats = async (req, res, next) => {
   }
 };
 
+// Lấy danh sách sản phẩm có trong kho (cho Staff bán hàng)
+const getProductsInStock = async (req, res, next) => {
+  try {
+    const inventories = await Inventory.find({ totalQuantity: { $gt: 0 } })
+      .populate({
+        path: 'product',
+        select: 'name price description image unit isActive',
+        populate: { path: 'unit', select: 'name symbol' }
+      });
+
+    // Lọc chỉ lấy sản phẩm active và có trong kho
+    const productsInStock = inventories
+      .filter(inv => inv.product && inv.product.isActive)
+      .map(inv => ({
+        id: inv.product._id,
+        name: inv.product.name,
+        price: inv.product.price,
+        description: inv.product.description,
+        image: inv.product.image,
+        unit: inv.product.unit,
+        stock: inv.totalQuantity,
+        isActive: inv.product.isActive
+      }));
+
+    res.json({
+      products: productsInStock,
+      total: productsInStock.length
+    });
+  } catch (err) {
+    return next(new HttpError('Fetching products in stock failed.', 500));
+  }
+};
+
 exports.getAllInventories = getAllInventories;
 exports.getProductsInStock = getProductsInStock;
 exports.getInventoryByProduct = getInventoryByProduct;
 exports.getExpiringBatches = getExpiringBatches;
 exports.getExpiredBatches = getExpiredBatches;
 exports.getInventoryStats = getInventoryStats;
+exports.getProductsInStock = getProductsInStock;
